@@ -56,6 +56,7 @@ export default {
   loginType: {
     password: "密码登录",
     sms: "手机号登录",
+    ldap: "LDAP 登录",
   },
   usernamePlaceholder: "请输入用户名/邮箱/手机号",
   passwordPlaceholder: "请输入密码",
@@ -76,6 +77,7 @@ export default {
   passkeyRegistered: "Passkey已注册",
   passkeyRegisterSuccess: "Passkey注册成功",
   passkeyRegisterFailed: "Passkey注册失败",
+  ldapTab: "LDAP 登录",
 
   title: "修改密码",
   weakPasswordWarning: "为了您的账户安全，请立即修改密码",

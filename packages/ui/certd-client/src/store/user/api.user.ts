@@ -89,6 +89,20 @@ export async function loginBySms(data: SmsLoginReq): Promise<LoginRes> {
   });
 }
 
+export interface LdapLoginReq {
+  username: string;
+  password: string;
+  captcha?: any;
+}
+
+export async function loginByLdap(data: LdapLoginReq): Promise<LoginRes> {
+  return await request({
+    url: "/loginByLdap",
+    method: "post",
+    data,
+  });
+}
+
 export async function mine(): Promise<UserInfoRes> {
   return await request({
     url: "/mine/info",

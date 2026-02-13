@@ -85,6 +85,33 @@ export class LoginController extends BaseController {
     return this.ok(token);
   }
 
+  @Post("/loginByLdap", { description: Constants.per.guest })
+  public async loginByLdap(
+    @Body(ALL)
+    body: any,
+    @RequestIP()
+    remoteIp: string
+  ) {
+    const settings = await this.sysSettingsService.getPublicSettings();
+    if (settings.ldapLoginEnabled !== true) {
+      throw new Error("未启用 LDAP 登录");
+    }
+    if (settings.captchaEnabled === true) {
+      await this.captchaService.doValidate({
+        form: body.captcha,
+        must: false,
+        captchaAddonId: settings.captchaAddonId,
+        req: { remoteIp },
+      });
+    }
+    const token = await this.loginService.loginByLdap({
+      username: body.username,
+      password: body.password,
+    });
+    this.writeTokenCookie(token);
+    return this.ok(token);
+  }
+
   @Post("/passkey/generateAuthentication", { description: Constants.per.guest })
   public async generateAuthentication() {
     const options = await this.passkeyService.generateAuthenticationOptions(this.ctx);

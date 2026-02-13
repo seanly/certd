@@ -67,6 +67,9 @@ export class SysPublicSettings extends BaseSettings {
     icon?: string;
   }> = {};
 
+  // LDAP 登录
+  ldapLoginEnabled?: boolean = false;
+
   notice?: string;
 
   adminMode?: "enterprise" | "saas" = "saas";
@@ -108,10 +111,21 @@ export class SysPrivateSettings extends BaseSettings {
       config: {},
     };
 
+  ldap?: {
+    url?: string;
+    bindDn?: string;
+    bindPassword?: string;
+    userBaseDn?: string;
+    userFilter?: string;
+  } = {};
+
   removeSecret() {
     const clone = cloneDeep(this);
     delete clone.jwtKey;
     delete clone.encryptSecret;
+    if (clone.ldap) {
+      delete clone.ldap.bindPassword;
+    }
     return clone;
   }
 }

@@ -47,6 +47,27 @@
               </a-form-item>
             </template>
           </a-tab-pane>
+          <a-tab-pane v-if="sysPublicSettings.ldapLoginEnabled === true" key="ldap" :tab="t('authentication.ldapTab')">
+            <template v-if="formState.loginType === 'ldap'">
+              <a-form-item required has-feedback name="username" :rules="rules.username">
+                <a-input v-model:value="formState.username" :placeholder="t('authentication.usernamePlaceholder')" autocomplete="off" @keydown.enter="handleFinish">
+                  <template #prefix>
+                    <fs-icon icon="ion:person-outline"></fs-icon>
+                  </template>
+                </a-input>
+              </a-form-item>
+              <a-form-item has-feedback name="password" :rules="rules.password">
+                <a-input-password v-model:value="formState.password" :placeholder="t('authentication.passwordPlaceholder')" autocomplete="off" @keyup.enter="handleFinish">
+                  <template #prefix>
+                    <fs-icon icon="ion:lock-closed-outline"></fs-icon>
+                  </template>
+                </a-input-password>
+              </a-form-item>
+              <a-form-item v-if="settingStore.sysPublic.captchaEnabled" has-feedback required name="captcha" :rules="rules.captcha">
+                <CaptchaInput v-model:model-value="formState.captcha" @keydown.enter="handleFinish"></CaptchaInput>
+              </a-form-item>
+            </template>
+          </a-tab-pane>
         </a-tabs>
         <a-form-item>
           <a-button type="primary" size="large" html-type="button" :loading="loading" class="login-button" @click="handleFinish">
@@ -126,6 +147,11 @@ const formRef = ref();
 let defaultLoginType = settingStore.sysPublic.defaultLoginType || "password";
 if (defaultLoginType === "sms") {
   if (!settingStore.sysPublic.smsLoginEnabled || !settingStore.isComm) {
+    defaultLoginType = "password";
+  }
+}
+if (defaultLoginType === "ldap") {
+  if (!settingStore.sysPublic.ldapLoginEnabled) {
     defaultLoginType = "password";
   }
 }

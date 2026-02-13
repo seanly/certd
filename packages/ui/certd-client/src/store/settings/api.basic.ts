@@ -37,6 +37,7 @@ export type SysPublicSetting = {
   emailRegisterEnabled?: boolean;
   passwordLoginEnabled?: boolean;
   smsLoginEnabled?: boolean;
+  ldapLoginEnabled?: boolean;
   defaultLoginType?: string;
   passkeyEnabled?: boolean;
   selfServicePasswordRetrievalEnabled?: boolean;
@@ -120,6 +121,14 @@ export type SysPrivateSetting = {
     config?: any;
   };
   acmeWalkFromAuthoritative?: boolean;
+
+  ldap?: {
+    url?: string;
+    bindDn?: string;
+    bindPassword?: string;
+    userBaseDn?: string;
+    userFilter?: string;
+  };
 
   //http请求超时时间
   httpRequestTimeout?: number;

@@ -7,6 +7,7 @@ import { getEmailSettings } from "../../../modules/sys/settings/fix.js";
 import { http, logger, utils } from "@certd/basic";
 import { CodeService } from "../../../modules/basic/service/code-service.js";
 import { SmsServiceFactory } from "../../../modules/basic/sms/factory.js";
+import { LdapService } from "../../../modules/login/service/ldap-service.js";
 
 /**
  */
@@ -23,6 +24,8 @@ export class SysSettingsController extends CrudController<SysSettingsService> {
   codeService: CodeService;
   @Inject()
   addonService: AddonService;
+  @Inject()
+  ldapService: LdapService;
 
   getService() {
     return this.service;
@@ -180,6 +183,12 @@ export class SysSettingsController extends CrudController<SysSettingsService> {
   async getSmsTypeDefine(@Body("type") type: string) {
     const define = await SmsServiceFactory.getDefine(type);
     return this.ok(define);
+  }
+
+  @Post("/testLdap", { description: "sys:settings:edit" })
+  async testLdap() {
+    const result = await this.ldapService.testConnection();
+    return this.ok(result);
   }
 
   @Post("/safe/get", { description: "sys:settings:view" })

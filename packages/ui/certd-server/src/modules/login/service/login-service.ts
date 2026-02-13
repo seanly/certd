@@ -15,6 +15,8 @@ import { OauthBoundService } from "./oauth-bound-service.js";
 import { PasskeyService } from "./passkey-service.js";
 import { InviteService } from "@certd/commercial-core";
 import { EntityManager } from "typeorm";
+import { LdapService } from "./ldap-service.js";
+import { simpleNanoId } from "@certd/basic";
 
 /**
  */
@@ -41,6 +43,8 @@ export class LoginService {
   addonService: AddonService;
   @Inject()
   oauthBoundService: OauthBoundService;
+  @Inject()
+  ldapService: LdapService;
 
   @Inject()
   passkeyService: PasskeyService;
@@ -252,6 +256,29 @@ export class LoginService {
       token,
       expire,
     };
+  }
+
+  async loginByLdap(req: { username: string; password: string }) {
+    this.checkIsBlocked(req.username);
+    const { username, password } = req;
+    const ldapUser = await this.ldapService.authenticate(username, password);
+    if (ldapUser == null) {
+      this.addErrorTimes(username, "用户名或密码错误");
+    }
+    let info = await this.userService.findOne([
+      { username: ldapUser.username },
+      { email: ldapUser.username },
+    ]);
+    if (info == null) {
+      info = await this.userService.register("username", {
+        username: ldapUser.username,
+        password: simpleNanoId(),
+        nickName: ldapUser.nickName || ldapUser.username,
+        email: ldapUser.email || "",
+      } as any);
+    }
+    this.clearCacheOnSuccess(username);
+    return this.onLoginSuccess(info);
   }
 
   async loginByOpenId(req: { openId: string; type: string }) {

@@ -112,6 +112,7 @@
     "jdcloud-sdk-js": "^1.2.202",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
+    "ldapjs": "^3.0.7",
     "jsrsasign": "^11.1.0",
     "jszip": "^3.10.1",
     "koa-send": "^5.0.1",

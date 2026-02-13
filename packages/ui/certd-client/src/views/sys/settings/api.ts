@@ -102,6 +102,13 @@ export async function TestSms(data: any) {
   });
 }
 
+export async function TestLdap(): Promise<{ success: boolean; message?: string }> {
+  return await request({
+    url: apiPrefix + "/testLdap",
+    method: "post",
+  });
+}
+
 export async function GetSmsTypeDefine(type: string) {
   return await request({
     url: apiPrefix + "/getSmsTypeDefine",

@@ -17,6 +17,31 @@
           <a href="https://certd.docmirror.cn/guide/use/setting/user-valid.html" target="_blank">{{ t("certd.helpDocLink") }}</a>
         </div>
       </a-form-item>
+      <a-form-item :label="t('certd.enableLdapLogin')" :name="['public', 'ldapLoginEnabled']">
+        <a-switch v-model:checked="formState.public.ldapLoginEnabled" />
+      </a-form-item>
+      <template v-if="formState.public.ldapLoginEnabled">
+        <a-form-item :label="t('certd.ldapUrl')" :name="['private', 'ldap', 'url']">
+          <a-input v-model:value="formState.private.ldap.url" :placeholder="t('certd.ldapUrlPlaceholder')" />
+        </a-form-item>
+        <a-form-item :label="t('certd.ldapBindDn')" :name="['private', 'ldap', 'bindDn']">
+          <a-input v-model:value="formState.private.ldap.bindDn" :placeholder="t('certd.ldapBindDnPlaceholder')" />
+        </a-form-item>
+        <a-form-item :label="t('certd.ldapBindPassword')" :name="['private', 'ldap', 'bindPassword']">
+          <a-input-password v-model:value="formState.private.ldap.bindPassword" :placeholder="t('certd.ldapBindPasswordPlaceholder')" autocomplete="new-password" />
+        </a-form-item>
+        <a-form-item :label="t('certd.ldapUserBaseDn')" :name="['private', 'ldap', 'userBaseDn']">
+          <a-input v-model:value="formState.private.ldap.userBaseDn" :placeholder="t('certd.ldapUserBaseDnPlaceholder')" />
+        </a-form-item>
+        <a-form-item :label="t('certd.ldapUserFilter')" :name="['private', 'ldap', 'userFilter']">
+          <a-input v-model:value="ldapUserFilterValue" :placeholder="t('certd.ldapUserFilterPlaceholder')" />
+          <div class="helper">{{ t("certd.ldapUserFilterHelper") }}</div>
+        </a-form-item>
+        <a-form-item :label="t('certd.ldapTest')">
+          <loading-button :title="t('certd.saveThenTest')" type="primary" :click="testLdap">{{ t("certd.testButton") }}</loading-button>
+          <div class="helper">{{ t("certd.saveThenTest") }}</div>
+        </a-form-item>
+      </template>
       <template v-if="formState.public.registerEnabled">
         <a-form-item :label="t('certd.enableUsernameRegistration')" :name="['public', 'usernameRegisterEnabled']">
           <a-switch v-model:checked="formState.public.usernameRegisterEnabled" />
@@ -73,7 +98,7 @@
 <script setup lang="tsx">
 import { notification } from "ant-design-vue";
 import { merge } from "lodash-es";
-import { computed, reactive, ref, Ref } from "vue";
+import { computed, reactive, ref, Ref, watch } from "vue";
 import { useSettingStore } from "/@/store/settings";
 import * as api from "/@/views/sys/settings/api";
 import { SysSettings } from "/@/views/sys/settings/api";
@@ -109,13 +134,24 @@ const formState = reactive<Partial<SysSettings>>({
       type: "aliyun",
       config: {},
     },
+    ldap: {
+      url: "",
+      bindDn: "",
+      bindPassword: "",
+      userBaseDn: "",
+      userFilter: "(uid={{username}})",
+    },
   },
 });
 
 const rules = {
   leastOneLogin: {
     validator: (rule: any, value: any) => {
-      if (!formState.public.passwordLoginEnabled && !formState.public.smsLoginEnabled) {
+      if (
+        !formState.public.passwordLoginEnabled &&
+        !formState.public.smsLoginEnabled &&
+        !formState.public.ldapLoginEnabled
+      ) {
         return Promise.reject(t("certd.atLeastOneLoginRequired"));
       }
       return Promise.resolve();
@@ -164,10 +200,38 @@ async function loadTypeDefine(type: string) {
   smsTypeDefineInputs.value = inputs;
 }
 
+const defaultLdapFilter = "(uid={{username}})";
+function ensureLdapForm() {
+  if (!formState.private) formState.private = {} as any;
+  if (!formState.private.ldap) {
+    formState.private.ldap = {
+      url: "",
+      bindDn: "",
+      bindPassword: "",
+      userBaseDn: "",
+      userFilter: defaultLdapFilter,
+    };
+  } else {
+    formState.private.ldap.userFilter =
+      formState.private.ldap.userFilter ?? defaultLdapFilter;
+  }
+}
+
+const ldapUserFilterValue = computed({
+  get() {
+    return formState.private?.ldap?.userFilter ?? defaultLdapFilter;
+  },
+  set(v: string) {
+    ensureLdapForm();
+    formState.private!.ldap!.userFilter = v ?? defaultLdapFilter;
+  },
+});
+
 async function loadSysSettings() {
   const data: any = await api.SysSettingsGet();
   merge(formState, data);
-  if (data?.private.sms?.type) {
+  ensureLdapForm();
+  if (data?.private?.sms?.type) {
     await loadTypeDefine(data.private.sms.type);
   }
   if (!settingsStore.isPlus) {
@@ -183,6 +247,12 @@ async function loadSysSettings() {
 const saveLoading = ref(false);
 loadSysSettings();
 const settingsStore = useSettingStore();
+watch(
+  () => formState.public.ldapLoginEnabled,
+  (enabled) => {
+    if (enabled) ensureLdapForm();
+  }
+);
 const onFinish = async (form: any) => {
   try {
     saveLoading.value = true;
@@ -196,6 +266,25 @@ const onFinish = async (form: any) => {
   }
 };
 
+const testLdapLoading = ref(false);
+async function testLdap() {
+  try {
+    testLdapLoading.value = true;
+    await api.SysSettingsSave(formState);
+    await settingsStore.loadSysSettings();
+    const res = await api.TestLdap();
+    if (res.success) {
+      notification.success({ message: t("certd.ldapTestSuccess") });
+    } else {
+      notification.error({ message: res.message || t("certd.ldapTestFailed") });
+    }
+  } catch (e: any) {
+    notification.error({ message: e?.message || t("certd.ldapTestFailed") });
+  } finally {
+    testLdapLoading.value = false;
+  }
+}
+
 const loginTypeOptions = computed(() => [
   {
     label: t("authentication.loginType.password"),
@@ -205,6 +294,11 @@ const loginTypeOptions = computed(() => [
     label: t("authentication.loginType.sms"),
     value: "sms",
     disabled: !formState.public.smsLoginEnabled,
+  },
+  {
+    label: t("authentication.loginType.ldap"),
+    value: "ldap",
+    disabled: !formState.public.ldapLoginEnabled,
   },
 ]);
 </script>

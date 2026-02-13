@@ -85,13 +85,15 @@ export const useUserStore = defineStore({
     /**
      * @description: login
      */
-    async login(loginType: string, params: LoginReq | SmsLoginReq): Promise<any> {
+    async login(loginType: string, params: LoginReq | SmsLoginReq | import("./api.user").LdapLoginReq): Promise<any> {
       let loginRes: any = null;
       if (loginType === "sms") {
         loginRes = await UserApi.loginBySms(params as SmsLoginReq);
         if ((params as SmsLoginReq).inviteCode) {
           inviteUtils.clear();
         }
+      } else if (loginType === "ldap") {
+        loginRes = await UserApi.loginByLdap(params as import("./api.user").LdapLoginReq);
       } else {
         loginRes = await UserApi.login(params as LoginReq);
       }

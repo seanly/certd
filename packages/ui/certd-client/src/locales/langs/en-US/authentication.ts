@@ -56,6 +56,7 @@ export default {
   loginType: {
     password: "Password Login",
     sms: "Mobile Login",
+    ldap: "LDAP Login",
   },
   usernamePlaceholder: "Please enter username/email/phone number",
   passwordPlaceholder: "Please enter your password",
@@ -76,6 +77,7 @@ export default {
   passkeyRegistered: "Passkey Registered",
   passkeyRegisterSuccess: "Passkey registered successfully",
   passkeyRegisterFailed: "Passkey registration failed",
+  ldapTab: "LDAP login",
   title: "Change Password",
   weakPasswordWarning: "For your account security, please change your password immediately",
   initPasswordWarning: "This account does not have a login password yet. Please set one first",
